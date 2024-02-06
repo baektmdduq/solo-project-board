@@ -1,4 +1,4 @@
-package com.solo.projectboard.domain.type;
+package com.solo.projectboard.domain.constant;
 
 import lombok.Getter;
 
