@@ -27,9 +27,9 @@ class MainControllerTest {
 
     // When & Then
     mvc.perform(get("/"))
-            .andExpect(status().isOk())
-            .andExpect(view().name("forward:/articles"))
-            .andExpect(forwardedUrl("/articles"))
+            .andExpect(status().is3xxRedirection()) // 리다이렉션 상태 코드 검증
+            .andExpect(redirectedUrl("/articles")) // 리다이렉션 대상 URL 검증
             .andDo(MockMvcResultHandlers.print());
   }
+
 }
