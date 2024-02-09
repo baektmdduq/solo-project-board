@@ -1,8 +1,17 @@
 package com.solo.projectboard.config;
 
+import com.solo.projectboard.dto.UserAccountDto;
+import com.solo.projectboard.dto.security.BoardPrincipal;
+import com.solo.projectboard.repository.UserAccountRepository;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -11,11 +20,39 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     return http
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .authorizeHttpRequests(auth -> auth
+                    .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                    .requestMatchers(
+                            HttpMethod.GET,
+                            "/",
+                            "/articles",
+                            "/articles/search-hashtag"
+                    ).permitAll()
+                    .anyRequest().authenticated()
+            )
             .formLogin(login -> login	// form 방식 로그인 사용
                     .defaultSuccessUrl("/articles", true)
                     .permitAll()	// 대시보드 이동이 막히면 안되므로 얘는 허용
             )
+            .logout((logoutConfig) ->
+                    logoutConfig.logoutSuccessUrl("/")
+            )
             .build();
   }
+
+  @Bean
+  public UserDetailsService userDetailsService(UserAccountRepository userAccountRepository) {
+    return username -> userAccountRepository
+            .findById(username)
+            .map(UserAccountDto::from)
+            .map(BoardPrincipal::from)
+            .orElseThrow(() -> new UsernameNotFoundException("유저를 찾을 수 없습니다 - username: " + username));
+
+  }
+
+  @Bean
+  public PasswordEncoder passwordEncoder() {
+      return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+  }
+
 }
